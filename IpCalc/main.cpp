@@ -3,8 +3,13 @@
 #include"resource.h"
 #include<CommCtrl.h>
 #include<cstdio> //sprintf
+//#include<>
 
 BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+VOID SetIPPrefix(HWND hwnd);
+VOID PrintInfo(HWND hwnd);
+CHAR* IPaddressToString(DWORD dwIPaddress, CHAR sz_IPaddress[]);
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
 {
 	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, (DLGPROC)DlgProc, 0);
@@ -19,12 +24,15 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		HWND hSpin = GetDlgItem(hwnd, IDC_SPIN_PREFIX);
 		SendMessage(hSpin, UDM_SETRANGE, 0,MAKELPARAM(30,1));
 		SendMessage(hSpin, UDM_SETPOS, 0, 1);
+
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
 	}
 		break;
 	case WM_COMMAND:
 	{
 		HWND hIPaddress = GetDlgItem(hwnd, IDC_IPADDRESS);
-		HWND hIPmask = GetDlgItem(hwnd, IDC_IPADDRESS_MASK);
+		HWND hIPmask = GetDlgItem(hwnd, IDC_IPMASK);
 		HWND hIPprefix = GetDlgItem(hwnd, IDC_EDIT_PREFIX);
 		DWORD dwIPaddress = 0;
 		DWORD dwIPmask = 0;
@@ -38,11 +46,12 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				if (FIRST_IPADDRESS(dwIPaddress) < 128) SendMessage(hIPmask, IPM_SETADDRESS, 0, 0xFF000000);
 				else if (FIRST_IPADDRESS(dwIPaddress) < 192) SendMessage(hIPmask, IPM_SETADDRESS, 0, 0xFFFF0000);
 				else if (FIRST_IPADDRESS(dwIPaddress) < 224) SendMessage(hIPmask, IPM_SETADDRESS, 0, 0xFFFFFF00);
-
+				SetIPPrefix(hwnd);
+				//PrintInfo(hwnd);
 			}
 		}
 			break;
-		case IDC_IPMASK:
+		/*case IDC_IPMASK:
 		{
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
@@ -54,7 +63,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				SendMessage(hIPprefix, WM_SETTEXT, 0, (LPARAM)szIPprefix);
 			}
 		}
-		break;
+		break;*/
 		case IDC_EDIT_PREFIX:
 		{
 			if (HIWORD(wParam) == EN_CHANGE)
@@ -73,12 +82,89 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 		}
+		PrintInfo(hwnd);
+	}
+		break;
+	case WM_NOTIFY:
+	{//Здесь лучше отслеживать измениния префикса, а изменение маски лучше отсеживать в сообщении wm_command?
+	//поскольку тогда маска и префикс связаны более интерактивно
+		if (wParam == IDC_IPMASK|| wParam == IDC_IPADDRESS)
+		{
+			/*std::cout <<"WM_NOTIFY:IDC_IPMASK << std::endl
+			std::cout << ((NMIPADDRESS*)lParam)->hdr.idFrom << std::endl;
+			std::cout << ((NMIPADDRESS*)lParam)-> << std::endl;
+			*/
+			SetIPPrefix(hwnd);
+		}
+		PrintInfo(hwnd);
 	}
 		break;
 	case WM_CLOSE:
+		FreeConsole();
 		EndDialog(hwnd, 0);
 
 	}
 	return false;
 }
+
+VOID SetIPPrefix(HWND hwnd)
+{
+			HWND hIPmask = GetDlgItem(hwnd, IDC_IPMASK);
+			HWND hIPprefix = GetDlgItem(hwnd, IDC_EDIT_PREFIX);
+			DWORD dwIPmask = 0;
+			SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
+			DWORD count = 0;
+			for (DWORD i = dwIPmask; 0x80000000 & i; i <<= 1, count++);
+			CHAR szIPprefix[3] = "";
+			sprintf(szIPprefix, "%i", count);
+			SendMessage(hIPprefix, WM_SETTEXT, 0, (LPARAM)szIPprefix);
+
+}
+
+VOID PrintInfo(HWND hwnd)
+{
+	CONST INT SIZE = 1024;
+	CHAR sz_info[SIZE]{};
+	CHAR sz_buffer[SIZE]{};
+	CHAR sz_NetworkIP_buffer[SIZE];
+	CHAR sz_BroadcastIP_buffer[SIZE];
+	CHAR sz_NumberOfIPs[SIZE];
+	CHAR sz_NumberOfHosts[SIZE];
+	CHAR sz_prefix[3];
+	HWND hIPaddress = GetDlgItem(hwnd, IDC_IPADDRESS);
+	HWND hIPmask = GetDlgItem(hwnd, IDC_IPMASK);
+	HWND hEditPrefix = GetDlgItem(hwnd, IDC_EDIT_PREFIX);
+	HWND hStaticInfo = GetDlgItem(hwnd, IDC_STATIC_INFO);
+	DWORD dwIPaddress = 0;
+	DWORD dwIPmask = 0;
+	DWORD dwIPprefix = 0;
+
+	SendMessage(hIPaddress, IPM_GETADDRESS, 0, (LPARAM)&dwIPaddress);
+	SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
+	SendMessage(hEditPrefix, WM_GETTEXT, 3, (LPARAM)sz_prefix);
+	dwIPprefix = atoi(sz_prefix);
+
+	sprintf(sz_NetworkIP_buffer, "Адрес сети:t\t\t\t\%s", IPaddressToString(dwIPaddress & dwIPmask, sz_buffer));
+	sprintf(sz_BroadcastIP_buffer, "Широковещательный адрес:\t%s", IPaddressToString(dwIPaddress | ~dwIPmask, sz_buffer));
+	sprintf(sz_NumberOfIPs, "Количество IP-	адресов:\t%u", 1<<(32 - dwIPprefix));
+	sprintf(sz_NumberOfHosts, "Количество узлов:\t\t%u", (1<<(32 - dwIPprefix))-2);
+
+	sprintf(sz_info, "%s\n%s\n%s\n%s", sz_NetworkIP_buffer, sz_BroadcastIP_buffer,sz_NumberOfIPs,sz_NumberOfHosts);
+	SendMessage(hStaticInfo, WM_SETTEXT, 0, (LPARAM)sz_info);
+}	
+
+CHAR* IPaddressToString(DWORD dwIPaddress,CHAR sz_IPaddress[])
+{
+	sprintf
+	(
+		sz_IPaddress,
+		"%i.%i.%i.%i",
+		FIRST_IPADDRESS(dwIPaddress),
+		SECOND_IPADDRESS(dwIPaddress),
+		THIRD_IPADDRESS(dwIPaddress),
+		FOURTH_IPADDRESS(dwIPaddress)
+		);
+	return sz_IPaddress;
+}
+
 
