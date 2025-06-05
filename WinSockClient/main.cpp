@@ -76,6 +76,7 @@ void main()
 		}
 		cout << iResult << "Bytes sent" << endl;
 
+
 		//iResult = shutdown(connect_socket, SD_SEND);
 		/*if (iResult == SOCKET_ERROR)
 		{
@@ -95,7 +96,7 @@ void main()
 		ZeroMemory(send_buffer, sizeof(send_buffer));
 		ZeroMemory(recvbuffer, sizeof(recvbuffer));
 		cout << "ВВедите сообщение"; cin.getline(send_buffer, DEFAULT_BUFFER_LENGTH);
-	} while (iResult > 0);
+	} while (iResult > 0 && strcmp(send_buffer,"exit"));
 	//7) Disconnect:
 	iResult = shutdown(connect_socket, SD_SEND);
 	closesocket(connect_socket);
