@@ -96,7 +96,8 @@ void main()
 		{
 			cout << "Bytes received:" << iResult << endl;
 			cout << "Message:" << recvbuffer << endl;
-			INT iSendResult = send(ClientSocket, recvbuffer, iResult, 0);
+			CHAR sz_responce[]("Hello I am server");
+			INT iSendResult = send(ClientSocket, sz_responce, sizeof (sz_responce), 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
 				cout << "Error: Send failed with code:" << WSAGetLastError() << endl;
