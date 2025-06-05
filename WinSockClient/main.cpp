@@ -61,42 +61,44 @@ void main()
 
 	//5) Получение и отправка данных:
 	//int recvbuflen = DEFAULT_BUFFER_LENGTH;
-	CONST CHAR SEND_BUFFER[] = "hello Server, Iam Client";
+	CHAR send_buffer[DEFAULT_BUFFER_LENGTH] = "hello Server, Iam Client";
 	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH]{};
-
-	iResult = send(connect_socket, SEND_BUFFER, strlen(SEND_BUFFER), 0);
-	if (iResult == SOCKET_ERROR)
-	{
-		cout << "Send data failed with" << WSAGetLastError() << endl;
-		closesocket(connect_socket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return;
-	}
-	cout << iResult << "Bytes sent" << endl;
-
-	//iResult = shutdown(connect_socket, SD_SEND);
-	if (iResult == SOCKET_ERROR)
-	{
-		cout << "Shutdown failed:" << WSAGetLastError() << endl;
-		closesocket(connect_socket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return;
-	}
-	// 6)Receive data:
-
 	do
 	{
+		iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
+		if (iResult == SOCKET_ERROR)
+		{
+			cout << "Send data failed with" << WSAGetLastError() << endl;
+			closesocket(connect_socket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return;
+		}
+		cout << iResult << "Bytes sent" << endl;
+
+		//iResult = shutdown(connect_socket, SD_SEND);
+		/*if (iResult == SOCKET_ERROR)
+		{
+			cout << "Shutdown failed:" << WSAGetLastError() << endl;
+			closesocket(connect_socket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return;
+		}*/
+		// 6)Receive data:
+
+
 		iResult = recv(connect_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0);
-		if (iResult > 0) cout << "Bytes received:" << iResult << " Message:"<< recvbuffer << endl;
+		if (iResult > 0) cout << "Bytes received:" << iResult << " Message:" << recvbuffer << endl;
 		else if (iResult == 0) cout << "Connect closed" << endl;
 		else cout << "Receive failed with code: " << WSAGetLastError() << endl;
-		
+		ZeroMemory(send_buffer, sizeof(send_buffer));
+		ZeroMemory(recvbuffer, sizeof(recvbuffer));
+		cout << "ВВедите сообщение"; cin.getline(send_buffer, DEFAULT_BUFFER_LENGTH);
 	} while (iResult > 0);
 	//7) Disconnect:
 	iResult = shutdown(connect_socket, SD_SEND);
 	closesocket(connect_socket);
 	freeaddrinfo(result);
 	WSACleanup();
-}
+};

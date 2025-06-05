@@ -91,13 +91,15 @@ void main()
 	SOCKET ClientSocket = accept(ListenSocket, NULL, NULL);
 	do
 	{
+		ZeroMemory(recvbuffer, sizeof(recvbuffer));
 		iResult = recv(ClientSocket,recvbuffer, recv_buffer_length,0);
 		if (iResult > 0)
 		{
 			cout << "Bytes received:" << iResult << endl;
 			cout << "Message:" << recvbuffer << endl;
 			CHAR sz_responce[]("Hello I am server");
-			INT iSendResult = send(ClientSocket, sz_responce, sizeof (sz_responce), 0);
+			//INT iSendResult = send(ClientSocket, sz_responce, sizeof (sz_responce), 0);
+			INT iSendResult = send(ClientSocket, recvbuffer, strlen (sz_responce), 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
 				cout << "Error: Send failed with code:" << WSAGetLastError() << endl;
