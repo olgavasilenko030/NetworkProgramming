@@ -14,6 +14,7 @@ using namespace std;
 
 #define DEFAULT_PORT			"27015"
 #define DEFAULT_BUFFER_LENGTH	1500
+#define SZ_SORRY  "Sorry, but all is busy"
 
 void main()
 {
@@ -93,6 +94,9 @@ void main()
 		if (iResult > 0) cout << "Bytes received:" << iResult << " Message:" << recvbuffer << endl;
 		else if (iResult == 0) cout << "Connect closed" << endl;
 		else cout << "Receive failed with code: " << WSAGetLastError() << endl;
+		///////////////////////////////////////////////
+		if (strcmp(recvbuffer, SZ_SORRY) == 0) break;
+		////////////////////////////////////////////////
 		ZeroMemory(send_buffer, sizeof(send_buffer));
 		ZeroMemory(recvbuffer, sizeof(recvbuffer));
 		cout << "ВВедите сообщение"; cin.getline(send_buffer, DEFAULT_BUFFER_LENGTH);
@@ -102,4 +106,6 @@ void main()
 	closesocket(connect_socket);
 	freeaddrinfo(result);
 	WSACleanup();
+
+	system("PAUSE");
 };
