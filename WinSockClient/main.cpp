@@ -30,7 +30,7 @@ void main()
 	hints.ai_protocol = IPPROTO_TCP;
 
 	//2)Выполняем разрешение имен:
-	addrinfo* result;
+	addrinfo* result = NULL; 
 	iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
 	if (iResult != 0)
 	{
@@ -99,8 +99,11 @@ void main()
 		////////////////////////////////////////////////
 		ZeroMemory(send_buffer, sizeof(send_buffer));
 		ZeroMemory(recvbuffer, sizeof(recvbuffer));
-		cout << "ВВедите сообщение"; cin.getline(send_buffer, DEFAULT_BUFFER_LENGTH);
-	} while (iResult > 0 && strcmp(send_buffer,"exit"));
+		cout << "ВВедите сообщение"; 
+		SetConsoleCP(1251);
+		cin.getline(send_buffer, DEFAULT_BUFFER_LENGTH);
+		SetConsoleCP(866);
+	} while (iResult > 0 && strcmp(send_buffer, "exit"));
 	//7) Disconnect:
 	iResult = shutdown(connect_socket, SD_SEND);
 	closesocket(connect_socket);

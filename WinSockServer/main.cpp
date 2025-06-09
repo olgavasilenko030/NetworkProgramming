@@ -128,17 +128,36 @@ void main()
 }
 VOID WINAPI HandleClient(SOCKET ClientSocket)
 {
+	SOCKADDR_IN peer;
+	ZeroMemory(&peer, sizeof(peer));
+	/*int namelen = 0;
+	getsockname(ClientSocket, &peer, &namelen);
+	cout << "SAdata:\t" << peer.sa_data << endl;
+	cout <<"Family:\t" << peer.sa_family << endl;
+	cout << "Length:\t" << namelen << endl;*/
+
+	/////////////////////////////////////
 	INT iResult = 0;
 	//6)Зацикливаем сокет на получение соединений от клиентов:
 	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+	CHAR address[16] = {};
+	INT address_length = 16;
 	int recv_buffer_length = DEFAULT_BUFFER_LENGTH;
 	do
 	{
 		ZeroMemory(recvbuffer, sizeof(recvbuffer));
-		iResult = recv(ClientSocket,recvbuffer, recv_buffer_length,0);
+		//iResult = recv(ClientSocket,recvbuffer, recv_buffer_length,0);
+		iResult = recvfrom(ClientSocket,recvbuffer, recv_buffer_length,0,(SOCKADDR*)&peer, &address_length);
 		if (iResult > 0)
 		{
-			cout << "Bytes received:" << iResult << endl;
+			inet_ntop(AF_INET, &peer.sin_addr,address, INET6_ADDRSTRLEN);
+			cout << "Peer:" <<address<<endl
+				<<peer.sin_addr.S_un.S_un_b.s_b1<<"."
+				<<peer.sin_addr.S_un.S_un_b.s_b2<<"."
+				<<peer.sin_addr.S_un.S_un_b.s_b3<<"."
+				<<peer.sin_addr.S_un.S_un_b.s_b4<<"."
+				<< endl;
+			cout << "Bytes received:" <<iResult << endl;
 			cout << "Message:" << recvbuffer << endl;
 			CHAR sz_responce[]("Hello I am server");
 			//INT iSendResult = send(ClientSocket, sz_responce, sizeof (sz_responce), 0);
@@ -146,8 +165,8 @@ VOID WINAPI HandleClient(SOCKET ClientSocket)
 			if (iSendResult == SOCKET_ERROR)
 			{
 				cout << "Error: Send failed with code:" << WSAGetLastError() << endl;
-				/*closesocket(ClientSocket);
-				closesocket(ListenSocket);
+				closesocket(ClientSocket);
+				/*closesocket(ListenSocket);
 				freeaddrinfo(result);
 				WSACleanup();*/
 				return;
