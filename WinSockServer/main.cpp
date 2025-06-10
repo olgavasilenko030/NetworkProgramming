@@ -1,4 +1,3 @@
-using namespace std;
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -12,6 +11,9 @@ using namespace std;
 #include<WS2tcpip.h>
 #include<iphlpapi.h>
 #include<iostream>
+using std::cin;
+using std::cout;
+using std::endl;
 
 #pragma comment(lib,"WS2_32.lib")
 
@@ -129,20 +131,24 @@ void main()
 VOID WINAPI HandleClient(SOCKET ClientSocket)
 {
 	SOCKADDR_IN peer;
+	CHAR address[16] = {};
+	INT address_length = 16;
 	ZeroMemory(&peer, sizeof(peer));
+	getpeername(ClientSocket, (SOCKADDR*)&peer, &address_length);
+	int port = ((peer.sin_port & 0xFF) << 8) + (peer.sin_port >> 8);
 	/*int namelen = 0;
 	getsockname(ClientSocket, &peer, &namelen);
 	cout << "SAdata:\t" << peer.sa_data << endl;
 	cout <<"Family:\t" << peer.sa_family << endl;
 	cout << "Length:\t" << namelen << endl;*/
 
+
 	/////////////////////////////////////
 	INT iResult = 0;
 	//6)Зацикливаем сокет на получение соединений от клиентов:
 	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
-	CHAR address[16] = {};
-	INT address_length = 16;
 	int recv_buffer_length = DEFAULT_BUFFER_LENGTH;
+	//inet_ntop(AF_INET, &peer.sin_addr, address, 16);
 	do
 	{
 		ZeroMemory(recvbuffer, sizeof(recvbuffer));
@@ -150,14 +156,14 @@ VOID WINAPI HandleClient(SOCKET ClientSocket)
 		iResult = recvfrom(ClientSocket,recvbuffer, recv_buffer_length,0,(SOCKADDR*)&peer, &address_length);
 		if (iResult > 0)
 		{
-			inet_ntop(AF_INET, &peer.sin_addr,address, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET, &peer.sin_addr,address, INET_ADDRSTRLEN);
 			cout << "Peer:" <<address<<endl
-				<<peer.sin_addr.S_un.S_un_b.s_b1<<"."
+				/*<<peer.sin_addr.S_un.S_un_b.s_b1<<"."
 				<<peer.sin_addr.S_un.S_un_b.s_b2<<"."
 				<<peer.sin_addr.S_un.S_un_b.s_b3<<"."
-				<<peer.sin_addr.S_un.S_un_b.s_b4<<"."
+				<<peer.sin_addr.S_un.S_un_b.s_b4<<"."*/
 				<< endl;
-			cout << "Bytes received:" <<iResult << endl;
+			cout << "Bytes received:" <<address<<":" << port<<" - "<<iResult << " - ";
 			cout << "Message:" << recvbuffer << endl;
 			CHAR sz_responce[]("Hello I am server");
 			//INT iSendResult = send(ClientSocket, sz_responce, sizeof (sz_responce), 0);
